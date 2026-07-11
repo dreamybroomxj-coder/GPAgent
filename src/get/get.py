@@ -143,8 +143,12 @@ def fetch_mp4_url_and_download(page_url, coursename="Unnamed"):
 
 def download_file(url, save_path, headers):
     print(f"📥 开始下载视频，保存路径: {save_path}")
+    # 自动创建目标文件夹
+    save_dir = os.path.dirname(save_path)
+    if save_dir:
+        os.makedirs(save_dir, exist_ok=True)
     if 'host' in headers: del headers['host']
-    
+
     response = requests.get(url, headers=headers, stream=True)
     total_size = int(response.headers.get('content-length', 0))
     block_size = 1024 * 1024  # 1MB buffer
