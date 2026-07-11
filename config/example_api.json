@@ -1,0 +1,7 @@
+[
+    {
+        "api_key": "sk-deepseek-12345abcde",
+        "base_url": "https://api.deepseek.com",
+        "model": "deepseek-v4-pro"
+    }
+]

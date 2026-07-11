@@ -1,0 +1,18 @@
+{
+    "username": "szhang123",
+    "password": "mypassword123",
+    "courses": [
+        {
+            "name": "Machine Learning",
+            "url": "https://trms.hkust-gz.edu.cn/a"
+        },
+        {
+            "name": "Natural Language Processing",
+            "url": "https://trms.hkust-gz.edu.cn/b"
+        },
+        {
+            "name": "Computer Vision",
+            "url": "https://trms.hkust-gz.edu.cn/c"
+        }
+    ]
+}

@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.pyc
+
+# Sensitive config (contains real passwords / API keys)
+config/config.json
+config/api.json
+config/state.json
+config/cookie/
+
+# Large model files
+models/*
+
+# Media & output files
+output.mp4
+output.mp3
+output.m4a
+src/stt/audio/
+src/stt/output/
+src/get/download/
+
+# Runtime data
+data/*
+export/*
+
+# Temp / scratch scripts
+1.py
+1.txt
+test.py
+
+# IDE
+.vscode/
+.idea/
