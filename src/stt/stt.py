@@ -83,16 +83,16 @@ def split_audio(audio_path, chunk_dir, duration_ms):
     # 先在全音频上检测所有静音（一次性，避免多次 seek）
     all_silence = detect_silence(audio_path, 0, duration_ms)
 
-    split_points = [0]
+    split_points = [0]  # int
     current = 0
     while current + CHUNK_TARGET_MS < duration_ms:
         preferred = current + CHUNK_TARGET_MS
-        split = find_split_point(
+        split = int(find_split_point(
             all_silence, preferred, MARGIN_MS
-        )
-        split = max(current + 1000, min(duration_ms, split))  # 至少切 1 秒
-        split_points.append(split)
-        current = split
+        ))
+    split = int(max(current + 1000, min(duration_ms, split)))  # 至少切 1 秒
+    split_points.append(split)
+    current = split
 
     chunks = []
     for i in range(len(split_points)):
@@ -223,3 +223,56 @@ def stt(i_dir, o_dir="nan", modelname="tiny.en", cooldown=0):
     print(f"合并 SRT 完成：{o_path}")
 
     return o_path
+
+
+def merge_chunks(chunk_dir, output_path=None):
+    """
+    直接从 chunk 文件夹合并已识别好的 SRT 文件，用于 stt() 已切分识别完毕但拼接出错时补救。
+
+    参数
+    ----------
+    chunk_dir : str
+        chunk 文件夹路径，其中应包含 {start_ms}.mp3 和 {start_ms}.srt 文件。
+    output_path : str, optional
+        输出 srt 路径，默认与 chunk_dir 的父目录同名 .srt。
+    """
+    if not os.path.isdir(chunk_dir):
+        raise FileNotFoundError(f"找不到文件夹：{chunk_dir}")
+
+    # 扫 chunk 文件：找所有 {start_ms}.mp3，配对同名 .srt
+    chunks = []
+    for fname in os.listdir(chunk_dir):
+        if not fname.endswith(".mp3"):
+            continue
+        name = fname[:-4]  # 去掉 .mp3
+        if name.endswith(".0"):
+            name=name[:-2]
+        chunk_path = os.path.join(chunk_dir, fname)
+        srt_path = os.path.join(chunk_dir, name + ".srt")
+        try:
+            offset_ms = int(name)  # 文件名就是起始毫秒数
+        except ValueError:
+            print(f"⚠️ 跳过无法解析偏移量的文件: {fname}")
+            continue
+        chunks.append((offset_ms, srt_path))
+
+    if not chunks:
+        print("❌ 未在 chunk 文件夹中找到有效的 mp3/srt 配对")
+        return
+
+    # 按偏移量排序
+    chunks.sort(key=lambda x: x[0])
+    srt_paths = [c[1] for c in chunks]
+    offsets = [c[0] for c in chunks]
+
+    # 确定输出路径
+    if output_path is None:
+        parent_dir = os.path.dirname(chunk_dir)
+        base = os.path.basename(parent_dir)
+        output_path = os.path.join(parent_dir, base + ".srt")
+
+    merge_srt(srt_paths, offsets, output_path)
+    print(f"合并完成：{output_path}")
+    return output_path
+
+

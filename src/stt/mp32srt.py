@@ -58,4 +58,4 @@ def mp32srt(i_dir,o_dir="nan",modelname="tiny.en"):
     writer(result, output_name)
 
     return o_path
-    
+        
