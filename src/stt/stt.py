@@ -72,29 +72,33 @@ def find_split_point(silence_gaps, preferred_ms, margin_ms):
     return (best[0] + best[1]) // 2
 
 
-def split_audio(audio_path, chunk_dir, duration_ms,margin_ms=0):
+def split_audio(audio_path, chunk_dir, duration_ms, margin_ms=0):
     """
     将音频按 ~15min 切分，存入 chunk_dir。
+    只对每个边界附近做局部静音检测，避免全音频扫描。
     返回 [(chunk_path, offset_ms), ...]。
     """
     CHUNK_TARGET_MS = 15 * 60 * 1000   # 15 min
-    #MARGIN_MS = 15 * 1000          # ±15s
 
     os.makedirs(chunk_dir, exist_ok=True)
-
-    # 先在全音频上检测所有静音（一次性，避免多次 seek）
-    all_silence = detect_silence(audio_path, 0, duration_ms)
 
     split_points = [0]  # int
     current = 0
     while current + CHUNK_TARGET_MS < duration_ms:
         preferred = current + CHUNK_TARGET_MS
-        split = int(find_split_point(
-            all_silence, preferred, margin_ms
-        ))
-    split = int(max(current + 1000, min(duration_ms, split)))  # 至少切 1 秒
-    split_points.append(split)
-    current = split
+
+        if margin_ms > 0:
+            # 只对边界附近的窗口检测静音
+            search_start = max(0, preferred - margin_ms)
+            search_end = min(duration_ms, preferred + margin_ms)
+            local_silence = detect_silence(audio_path, search_start, search_end)
+            split = int(find_split_point(local_silence, preferred, margin_ms))
+        else:
+            split = preferred
+
+        split = int(max(current + 1000, min(duration_ms, split)))  # 至少切 1 秒
+        split_points.append(split)
+        current = split
 
     chunks = []
     for i in range(len(split_points)):
@@ -103,7 +107,7 @@ def split_audio(audio_path, chunk_dir, duration_ms,margin_ms=0):
         chunk_name = f"{start}.mp3"
         chunk_path = os.path.join(chunk_dir, chunk_name)
 
-        # ffmpeg 切分
+        # ffmpeg 切分（-acodec copy 极快，不走编码器）
         cmd = [
             "ffmpeg", "-y",
             "-ss", str(start / 1000),
@@ -114,7 +118,8 @@ def split_audio(audio_path, chunk_dir, duration_ms,margin_ms=0):
         ]
         subprocess.run(cmd, capture_output=True)
         chunks.append((chunk_path, start))
-        print(f"chunked:{len(chunks)}")
+        print(f"  chunk {len(chunks)}: {start / 1000:.0f}s – {end / 1000:.0f}s")
+
     return chunks
 
 
