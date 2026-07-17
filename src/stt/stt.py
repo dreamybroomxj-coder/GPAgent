@@ -58,6 +58,8 @@ def find_split_point(silence_gaps, preferred_ms, margin_ms):
     在 preferred_ms ± margin_ms 范围内找最大的静音空档，返回其中点。
     找不到则返回 preferred_ms（硬切）。
     """
+    if margin_ms==0:
+        return preferred_ms
     candidates = [
         (s, e) for s, e in silence_gaps
         if preferred_ms - margin_ms <= s and e <= preferred_ms + margin_ms
@@ -70,13 +72,13 @@ def find_split_point(silence_gaps, preferred_ms, margin_ms):
     return (best[0] + best[1]) // 2
 
 
-def split_audio(audio_path, chunk_dir, duration_ms):
+def split_audio(audio_path, chunk_dir, duration_ms,margin_ms=0):
     """
     将音频按 ~15min 切分，存入 chunk_dir。
     返回 [(chunk_path, offset_ms), ...]。
     """
     CHUNK_TARGET_MS = 15 * 60 * 1000   # 15 min
-    MARGIN_MS = 1 * 60 * 1000          # ±1 min
+    #MARGIN_MS = 15 * 1000          # ±15s
 
     os.makedirs(chunk_dir, exist_ok=True)
 
@@ -88,7 +90,7 @@ def split_audio(audio_path, chunk_dir, duration_ms):
     while current + CHUNK_TARGET_MS < duration_ms:
         preferred = current + CHUNK_TARGET_MS
         split = int(find_split_point(
-            all_silence, preferred, MARGIN_MS
+            all_silence, preferred, margin_ms
         ))
     split = int(max(current + 1000, min(duration_ms, split)))  # 至少切 1 秒
     split_points.append(split)
@@ -112,7 +114,7 @@ def split_audio(audio_path, chunk_dir, duration_ms):
         ]
         subprocess.run(cmd, capture_output=True)
         chunks.append((chunk_path, start))
-
+        print(f"chunked:{len(chunks)}")
     return chunks
 
 
@@ -167,7 +169,7 @@ def merge_srt(chunks_srt, offset_ms_list, output_path):
         f.write("\n\n".join(all_entries) + "\n")
 
 
-def stt(i_dir, o_dir="nan", modelname="tiny.en", cooldown=0):
+def stt(i_dir, o_dir="nan", modelname="tiny.en", cooldown=0,margin_ms=0):
     """
     将 MP3 转写为 SRT，自动处理长音频的分割。
 
@@ -204,7 +206,7 @@ def stt(i_dir, o_dir="nan", modelname="tiny.en", cooldown=0):
     # 需要切分
     input_dir = os.path.dirname(i_dir)
     chunk_dir = os.path.join(input_dir, "chunk")
-    chunks = split_audio(i_dir, chunk_dir, duration_ms)
+    chunks = split_audio(i_dir, chunk_dir, duration_ms,margin_ms)
     print(f"音频长度 {duration_ms / 60000:.1f} min，切分为 {len(chunks)} 个片段")
 
     chunk_srt_paths = []
