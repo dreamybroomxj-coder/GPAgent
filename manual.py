@@ -1,6 +1,6 @@
 import os
 from datetime import datetime
-
+from time import sleep
 from src.get.get import fetch_mp4_url_and_download
 from src.utils.mp42mp3 import mp42mp3
 from src.stt.stt import stt
@@ -16,29 +16,33 @@ if strip_time == "":
 else:
     strip_time = float(strip_time)
 print("准备开始爬取")
+sleep(0.1)
 video_path = fetch_mp4_url_and_download(url, course_name)
 print(f"下载完成：{video_path}")
 
 print("开始转mp3")
+sleep(0.1)
 audio_path = mp42mp3(video_path)
 print(f"转音频完成：{audio_path}")
 
 
 print("开始分块、转写")
-srt_path = stt(audio_path,"nan","tiny.en",10)
+sleep(0.1)
+srt_path = stt(audio_path,"nan","tiny.en",10,0)
 print(f"转写完成：{srt_path}")
 
 print("开始转txt")
+sleep(0.1)
 txt_path = srt2txt(srt_path, "nan", cuthead=strip_time)
 print(f"转txt完成：{txt_path}")
-
 # 读取转写文本
 print("读取转录文本……")
+sleep(0.1)
 with open(txt_path, "r", encoding="utf-8") as f:
     transcript = f.read()
 
 print(f"\n转录文本共 {len(transcript)} 字符，开始 AI 处理...")
-
+sleep(0.1)
 # 调用 AI 生成四部分内容
 print("  [1/4] 生成摘要...")
 sec_abstract = abstract(transcript)

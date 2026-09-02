@@ -31,6 +31,7 @@ def mp32srt(i_dir,o_dir="nan",modelname="tiny.en"):
 
     model = whisper.load_model(
         modelname,
+        device="cpu",
         download_root=MODELS_DIR
     )
 
