@@ -1,7 +1,7 @@
 # Python
 __pycache__/
 *.pyc
-
+*.bak
 # Sensitive config (contains real passwords / API keys)
 config/config.json
 config/api.json

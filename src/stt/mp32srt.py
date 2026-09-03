@@ -1,19 +1,19 @@
 import os
-import whisper
-from whisper.utils import get_writer
+from faster_whisper import WhisperModel
+
 from src.config import MODELS_DIR
-"""model = whisper.load_model(
-    "base.en",
-    download_root="src/stt/model"
-)
 
-result = model.transcribe("src/stt/audio/moon.mp3")
 
-writer = get_writer("srt", "src/stt/output")
-writer(result, "src/stt/audio/moon.mp3")
-"""
+def _format_srt_timestamp(seconds):
+    """将秒数转换为 SRT 使用的 HH:MM:SS,mmm 格式。"""
+    total_ms = round(seconds * 1000)
+    hours, remainder = divmod(total_ms, 3_600_000)
+    minutes, remainder = divmod(remainder, 60_000)
+    seconds, milliseconds = divmod(remainder, 1000)
+    return f"{hours:02d}:{minutes:02d}:{seconds:02d},{milliseconds:03d}"
 
-def mp32srt(i_dir,o_dir="nan",modelname="tiny.en"):
+
+def mp32srt(i_dir,o_dir="nan",modelname="tiny.en",usedevice="cpu"):
 
     if not os.path.isfile(i_dir):
         raise FileNotFoundError(f"找不到文件：{i_dir}")
@@ -29,34 +29,33 @@ def mp32srt(i_dir,o_dir="nan",modelname="tiny.en"):
     else:
         o_path = o_dir
 
-    model = whisper.load_model(
+    if usedevice == "cpu":
+        compute_type = "int8"
+    elif usedevice == "cuda":
+        compute_type = "float16"
+    else:
+        compute_type = "default"
+
+    model = WhisperModel(
         modelname,
-        device="cpu",
-        download_root=MODELS_DIR
+        device=usedevice,
+        compute_type=compute_type,
+        download_root=str(MODELS_DIR)
     )
 
-    result = model.transcribe(i_dir)
-    #writer = get_writer("srt", "src/stt/output")
-    #writer(result, "src/stt/audio/moon.mp3")
-
-
-
-    # 识别
-    result = model.transcribe(
-        i_dir,       
-        verbose=False           #显示进度
-    )
+    segments, _ = model.transcribe(i_dir, beam_size=5)
 
     # 输出目录
     output_dir = os.path.dirname(o_path)
     if output_dir == "":
         output_dir = "."
+    os.makedirs(output_dir, exist_ok=True)
 
-    # 文件名（无扩展名）
-    output_name = os.path.splitext(os.path.basename(o_path))[0]
-
-    writer = get_writer("srt", output_dir)
-    writer(result, output_name)
+    with open(o_path, "w", encoding="utf-8") as srt_file:
+        for index, segment in enumerate(segments, start=1):
+            start = _format_srt_timestamp(segment.start)
+            end = _format_srt_timestamp(segment.end)
+            text = segment.text.strip()
+            srt_file.write(f"{index}\n{start} --> {end}\n{text}\n\n")
 
     return o_path
-        

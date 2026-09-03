@@ -2,8 +2,8 @@
 openai>=1.0
 
 # Speech-to-text
-openai-whisper>=20231117
-torch>=2.0
+onnxruntime-gpu>=1.14,<2
+faster-whisper
 
 # TRMS browser automation and video download
 playwright>=1.40

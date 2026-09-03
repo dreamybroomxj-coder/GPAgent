@@ -175,7 +175,7 @@ def merge_srt(chunks_srt, offset_ms_list, output_path):
         f.write("\n\n".join(all_entries) + "\n")
 
 
-def stt(i_dir, o_dir="nan", modelname="tiny.en", cooldown=0,margin_ms=0):
+def stt(i_dir, o_dir="nan", modelname="Systran/faster-whisper-tiny.en", cooldown=0,margin_ms=0,usedevice="cpu"):
     """
     将 MP3 转写为 SRT，自动处理长音频的分割。
 
@@ -207,7 +207,7 @@ def stt(i_dir, o_dir="nan", modelname="tiny.en", cooldown=0,margin_ms=0):
 
     # 时长在阈值内 → 直接转写
     if duration_ms <= CHUNK_TARGET_MS + MARGIN_MS:
-        return mp32srt(i_dir, o_path, modelname)
+        return mp32srt(i_dir, o_path, modelname,usedevice)
 
     # 需要切分
     input_dir = os.path.dirname(i_dir)
@@ -220,7 +220,7 @@ def stt(i_dir, o_dir="nan", modelname="tiny.en", cooldown=0,margin_ms=0):
     for idx, (chunk_path, offset_ms) in enumerate(chunks):
         print(f"  转写片段 {idx + 1}/{len(chunks)} (偏移 {offset_ms / 1000:.0f}s)...")
         chunk_srt = os.path.splitext(chunk_path)[0] + ".srt"
-        mp32srt(chunk_path, chunk_srt, modelname)
+        mp32srt(chunk_path, chunk_srt, modelname,usedevice)
         chunk_srt_paths.append(chunk_srt)
         offsets.append(offset_ms)
         if cooldown > 0 and idx < len(chunks) - 1:

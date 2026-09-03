@@ -23,7 +23,16 @@ cd GPAgent
 ```bash
 conda create -n gpagent python=3.10
 conda activate gpagent
-pip install -r requirements.txt
+```
+使用cpu或gpu进行本地的语音识别都是支持的，使用gpu大约能获得一倍的加速，但是实际感觉差不多
+```bash
+# 使用cpu
+pip install -r requirements_cpu.txt
+# 使用gpu
+pip install -r requirements_gpu.txt
+```
+
+```bash
 # 安装 Playwright 浏览器（Chromium）
 playwright install chromium
 ```
@@ -85,9 +94,9 @@ GPAgent/
 
 - [ ] 考虑如何处理课间的中文聊天。音量差别似乎不大，另外识别语言又会增加全局的计算负担……目前为了加速使用的是纯英文版本模型，但是遇到中文语音的时候就会变得奇慢无比
 
-- [ ] 考虑使用fast-whisper重构asr部分
+- [x] 考虑使用fast-whisper重构asr部分
 
-- [ ] 完善安装部分的说明，包括torch和whisper等
+- [x] 完善安装部分的说明，包括torch和whisper等
 
 - [ ] 基于提示词让AI生成课程内容可能的专业词汇列表，作为语音识别的prompt
 

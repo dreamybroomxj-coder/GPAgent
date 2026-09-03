@@ -28,7 +28,7 @@ print(f"转音频完成：{audio_path}")
 
 print("开始分块、转写")
 sleep(0.1)
-srt_path = stt(audio_path,"nan","tiny.en",10,0)
+srt_path = stt(audio_path,"nan","Systran/faster-whisper-tiny.en",10,0,"cpu")
 print(f"转写完成：{srt_path}")
 
 print("开始转txt")
